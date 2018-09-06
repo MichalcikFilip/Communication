@@ -5,11 +5,11 @@ namespace Michalcik.Communication.Messages
     [Serializable]
     public class Heartbeat : Message, IMessage
     {
-        public DateTime Time { get; }
+        public DateTime Timestamp { get; }
 
         public Heartbeat()
         {
-            Time = DateTime.Now;
+            Timestamp = DateTime.Now;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Michalcik.Communication.Messages;
+﻿using Michalcik.Communication.Factories;
+using Michalcik.Communication.Messages;
 using Michalcik.Communication.Messages.Security;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Michalcik.Communication.Client
 
         public ClientInst()
         {
-            ConnectionFactory = new ConnectionFactory();
+            ConnectionFactory = new BinaryConnectionFactory();
         }
 
         public void AddResponseHandler(IResponseHandler handler)
@@ -75,7 +76,7 @@ namespace Michalcik.Communication.Client
         {
             if (message != null && connection.IsConnected)
             {
-                message.MessageId = Guid.NewGuid();
+                message.Id = Guid.NewGuid();
                 connection.Send(message);
             }
         }
@@ -84,10 +85,10 @@ namespace Michalcik.Communication.Client
         {
             if (message != null && connection.IsConnected)
             {
-                message.MessageId = Guid.NewGuid();
+                message.Id = Guid.NewGuid();
 
                 if (responseHandler != null)
-                    responseHandlers.Add(message.MessageId, responseHandler);
+                    responseHandlers.Add(message.Id, responseHandler);
 
                 connection.Send(message);
             }
@@ -104,10 +105,10 @@ namespace Michalcik.Communication.Client
                 {
                     IResponse response = (IResponse)message;
 
-                    if (responseHandlers.ContainsKey(response.ResponseId))
+                    if (responseHandlers.ContainsKey(response.MessageId))
                     {
-                        responseHandlers[response.ResponseId].Handle(response);
-                        responseHandlers.Remove(response.ResponseId);
+                        responseHandlers[response.MessageId].Handle(response);
+                        responseHandlers.Remove(response.MessageId);
                     }
 
                     foreach (IResponseHandler handler in globalResponseHandlers)

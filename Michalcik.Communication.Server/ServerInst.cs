@@ -1,4 +1,5 @@
-﻿using Michalcik.Communication.Messages;
+﻿using Michalcik.Communication.Factories;
+using Michalcik.Communication.Messages;
 using Michalcik.Communication.Messages.Security;
 using Michalcik.Communication.Server.Security.Authenticators;
 using Michalcik.Communication.Server.Security.Clients;
@@ -33,7 +34,7 @@ namespace Michalcik.Communication.Server
                 throw new ArgumentNullException(nameof(endPoint));
 
             listener = new TcpListener(endPoint);
-            ConnectionFactory = new ConnectionFactory();
+            ConnectionFactory = new BinaryConnectionFactory();
         }
 
         public ServerInst(IPAddress ipAddress, int port)
@@ -42,7 +43,7 @@ namespace Michalcik.Communication.Server
                 throw new ArgumentNullException(nameof(ipAddress));
 
             listener = new TcpListener(ipAddress, port);
-            ConnectionFactory = new ConnectionFactory();
+            ConnectionFactory = new BinaryConnectionFactory();
         }
 
         public void AddMessageHandler(IMessageHandler handler)
@@ -105,8 +106,8 @@ namespace Michalcik.Communication.Server
 
                     if (response != null)
                     {
-                        response.MessageId = Guid.NewGuid();
-                        response.ResponseId = message.MessageId;
+                        response.Id = Guid.NewGuid();
+                        response.MessageId = message.Id;
 
                         clientConnection.Connection.Send(response);
                     }

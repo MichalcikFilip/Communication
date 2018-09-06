@@ -4,6 +4,6 @@ namespace Michalcik.Communication.Messages
 {
     public interface IMessage
     {
-        Guid MessageId { get; set; }
+        Guid Id { get; set; }
     }
 }

@@ -1,9 +1,7 @@
 ﻿using Michalcik.Communication.Messages;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Sockets;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 
 namespace Michalcik.Communication
@@ -14,8 +12,8 @@ namespace Michalcik.Communication
 
         private bool running = false;
         private Queue<IMessage> messageBuffer = new Queue<IMessage>();
-        private BinaryFormatter formatter = new BinaryFormatter();
 
+        private ISerializer serializer;
         private TcpClient client;
         private NetworkStream stream;
 
@@ -23,12 +21,10 @@ namespace Michalcik.Communication
         public event ErrorHandler ReadError;
         public event ErrorHandler WriteError;
 
-        public Connection(TcpClient client)
+        public Connection(ISerializer serializer, TcpClient client)
         {
-            if (client == null)
-                throw new ArgumentNullException(nameof(client));
-
-            this.client = client;
+            this.serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            this.client = client ?? throw new ArgumentNullException(nameof(client));
             stream = client.GetStream();
         }
 
@@ -70,22 +66,17 @@ namespace Michalcik.Communication
             {
                 while (messageBuffer.Count > 0)
                 {
-                    using (MemoryStream memoryStream = new MemoryStream())
+                    byte[] data = serializer.Serialize(messageBuffer.Dequeue());
+                    byte[] dataLength = BitConverter.GetBytes(data.Length);
+
+                    try
                     {
-                        formatter.Serialize(memoryStream, messageBuffer.Dequeue());
-
-                        byte[] data = memoryStream.ToArray();
-                        byte[] dataLength = BitConverter.GetBytes(data.Length);
-
-                        try
-                        {
-                            stream.Write(dataLength, 0, 4);
-                            stream.Write(data, 0, data.Length);
-                        }
-                        catch (Exception ex)
-                        {
-                            WriteError?.Invoke(ex);
-                        }
+                        stream.Write(dataLength, 0, 4);
+                        stream.Write(data, 0, data.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteError?.Invoke(ex);
                     }
                 }
 
@@ -113,10 +104,7 @@ namespace Michalcik.Communication
 
                     if (data.Length > 0)
                     {
-                        using (MemoryStream memoryStream = new MemoryStream(data))
-                        {
-                            Received?.Invoke((IMessage)formatter.Deserialize(memoryStream));
-                        }
+                        Received?.Invoke(serializer.Deserialize(data));
                     }
                 }
                 catch (Exception ex)
